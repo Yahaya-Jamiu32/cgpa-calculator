@@ -3,6 +3,9 @@
 A free, no-login web app that helps students calculate their **semester GPA** and their **cumulative CGPA**.
 Built with plain HTML, CSS and JavaScript no frameworks, no backend, no database.
 
+Below is a link to the live demo:
+https://cgpa-calculator-yj.vercel.app
+
 ## 1. How to use the app
 
 ### Step 1: Enter your courses
