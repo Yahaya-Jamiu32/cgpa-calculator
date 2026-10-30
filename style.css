@@ -1,0 +1,543 @@
+/* 
+   CGPA Calculator – stylesheet
+   --------------------------------------------------------------------------
+   TABLE OF CONTENTS
+     1. Design tokens (CSS variables)   <- change colours/spacing here
+     2. Base & reset
+     3. Utilities (helper classes)
+     4. App layout (sidebar, content, views)
+     5. Navigation
+     6. Cards & panels
+     7. Buttons
+     8. Forms & the course table
+     9. Messages (errors, stale notice)
+    10. Results (summary cards, tables)
+    11. Dialog (clear-all confirmation)
+    12. Responsive rules (tablet, phone, small desktop)
+    */
+
+
+/* 
+   1. DESIGN TOKENS
+   All repeated colours and sizes live here so the whole theme can be
+   changed from one place.
+    */
+:root {
+  /* Brand colours */
+  --navy:   #0f2350;   /* sidebar, bottom nav, headings */
+  --blue:   #2563eb;   /* primary buttons, active nav item */
+  --blue-d: #1d4ed8;   /* primary button hover */
+
+  /* Surfaces & text */
+  --bg:     #f4f8ff;   /* page background (very light blue) */
+  --white:  #fff;      /* panels and inputs */
+  --text:   #0f2350;   /* main text (dark navy) */
+  --muted:  #5d6f94;   /* supporting text (muted blue-grey) */
+  --border: #dbe5f5;   /* subtle borders */
+
+  /* Status colours */
+  --green:    #15803d; /* successful results (dark enough for readable text) */
+  --green-bg: #ecfdf3; /* results section background */
+  --red:      #b42318; /* errors */
+  --red-bg:   #fef3f2; /* error background */
+
+  /* Shape & depth */
+  --r:  12px;                              /* standard corner radius */
+  --sh: 0 2px 10px rgba(15, 35, 80, .07);  /* soft card shadow */
+}
+
+
+/* 
+   2. BASE & RESET
+    */
+* { box-sizing: border-box; }   /* padding/borders never make elements wider */
+
+html,
+body { margin: 0; }
+
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  overflow-x: hidden;           /* safety net: no sideways page scrolling */
+}
+
+h1 { font-size: 1.7rem; margin: 0 0 .6rem; }
+h2 { font-size: 1.1rem; margin: 0 0 .8rem; }
+
+/* Clear keyboard focus ring for every focusable element (accessibility) */
+:focus-visible {
+  outline: 3px solid #f59e0b;
+  outline-offset: 2px;
+}
+
+
+/* 
+   3. UTILITIES
+    */
+.muted { color: var(--muted); font-size: .9rem; }
+
+/* Screen-reader-only text: hidden visually, still read aloud */
+.sr { position: absolute; left: -9999px; }
+
+/* Inline SVG icons (see the <symbol> sprite at the top of index.html) */
+.ic    { width: 22px; height: 22px; flex: none; }
+.ic.sm { width: 16px; height: 16px; }
+
+/* Wrapper that lets wide tables scroll inside themselves, not the page */
+.scroll { overflow-x: auto; }
+
+
+/* 
+   4. APP LAYOUT
+   Desktop: fixed sidebar (left) + scrolling content (right).
+    */
+.app {
+  display: grid;
+  grid-template-columns: 240px 1fr;   /* sidebar width | everything else */
+  min-height: 100vh;
+}
+
+.content { min-width: 0; }            /* lets grid children shrink instead of overflowing */
+
+/* The mobile header is hidden on desktop (shown in section 12) */
+.topbar { display: none; }
+
+main {
+  padding: 28px;
+  max-width: 1200px;
+}
+
+/* Single-page navigation: only the view with .active is visible */
+.view { display: none; }
+.view.active { display: block; }
+
+/* Calculator view: main column + optional right-hand info panel */
+.calc-grid {
+  display: grid;
+  grid-template-columns: 1fr;         /* stacked by default (narrow screens) */
+  gap: 18px;
+}
+@media (min-width: 1100px) {
+  .calc-grid { grid-template-columns: minmax(0, 1fr) 300px; }  /* add right panel */
+}
+
+
+/* 
+   5. NAVIGATION
+    */
+
+/* ---- Desktop sidebar ---- */
+.sidebar {
+  background: var(--navy);
+  color: #fff;
+  padding: 20px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: sticky;                   /* stays in place while content scrolls */
+  top: 0;
+  height: 100vh;
+}
+.sidebar nav {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Logo + app name (white in sidebar, navy in the mobile header) */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  margin-bottom: 18px;
+}
+.brand.dark { margin: 0; color: var(--navy); }
+
+/* Motivational message pinned to the bottom of the sidebar */
+.motto {
+  margin-top: auto;                   /* pushes it to the bottom */
+  color: #b9c7e6;
+  font-size: .9rem;
+  border-top: 1px solid rgba(255, 255, 255, .15);
+  padding-top: 14px;
+}
+
+/* ---- Navigation buttons (shared by sidebar and bottom bar) ---- */
+.nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  padding: 11px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  min-height: 44px;                   /* comfortable tap target */
+  text-align: left;
+}
+.sidebar .nav-btn:hover { background: rgba(255, 255, 255, .08); }
+.nav-btn.active { background: var(--blue); color: #fff; }   /* current page */
+
+/* ---- Mobile bottom bar (hidden on desktop, shown in section 12) ---- */
+.bottom-nav { display: none; }
+
+
+/* 
+   6. CARDS & PANELS
+    */
+
+/* White content box used all over the app */
+.panel {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  box-shadow: var(--sh);
+  padding: 20px;
+  margin-bottom: 18px;
+}
+
+/* Light-blue welcome banner on the Home page */
+.banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  background: #e4eefc;
+  border-radius: 16px;
+  padding: 28px;
+  margin-bottom: 18px;
+}
+/* darker than --muted: the light-blue banner needs extra contrast for readable text */
+.banner p { color: #46577d; max-width: 46ch; }
+.banner-art { width: 110px; height: 110px; color: var(--blue); flex: none; }
+
+/* Panel heading row: title on the left, buttons on the right */
+.row-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;                    /* buttons drop below the title if needed */
+  margin-bottom: 12px;
+}
+.row-head h2 { margin: 0; }
+
+/* "Did you know?" card */
+.tip { background: #e4eefc; }
+
+/* Numbered "How it works" list */
+.steps { margin: 0; padding-left: 20px; color: var(--muted); }
+.steps li { margin: 4px 0; }
+
+
+/* 
+   7. BUTTONS
+   Base style: .btn   |   Variants: .primary  .ghost  .danger  .big
+    */
+.btns { display: flex; gap: 8px; }    /* group of buttons */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font: inherit;
+  font-weight: 600;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  padding: 10px 16px;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+/* Main action (Calculate, Add course) */
+.btn.primary { background: var(--blue); color: #fff; }
+.btn.primary:hover { background: var(--blue-d); }
+
+/* Secondary action (Clear all, Cancel) */
+.btn.ghost { background: #fff; border-color: var(--border); color: var(--navy); }
+.btn.ghost:hover { background: var(--bg); }
+
+/* Destructive action (confirm delete) */
+.btn.danger { background: var(--red); color: #fff; }
+
+/* Full-width, larger button (Calculate, Recalculate) */
+.btn.big { width: 100%; margin-top: 14px; font-size: 1.05rem; }
+
+/* Round trash-can button at the end of each course row */
+.rm {
+  background: none;
+  border: 0;
+  color: var(--muted);
+  cursor: pointer;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 8px;
+}
+.rm:hover { color: var(--red); background: var(--red-bg); }
+.rm .ic { margin: auto; }
+
+
+/* 
+   8. FORMS & COURSE TABLE
+    */
+
+/* ---- Generic tables ---- */
+table { width: 100%; border-collapse: collapse; }
+th {
+  font-size: .82rem;
+  color: var(--muted);
+  text-align: left;
+  padding: 8px;
+  background: #f0f5fd;
+}
+td {
+  padding: 8px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+/* ---- Inputs & dropdowns ---- */
+input,
+select {
+  scroll-margin: 80px 0 100px;        /* keeps focused fields clear of sticky bars */
+  font: inherit;                      /* 16px text also stops iOS zooming on focus */
+  color: var(--text);
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+}
+/* Field that failed validation (colour + red border, set by script.js) */
+input.bad,
+select.bad { border-color: var(--red); background: var(--red-bg); }
+
+/* ---- "Previous semesters" group ---- */
+.prev {
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  margin: 16px 0 0;
+  padding: 12px 14px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;     /* two fields side by side */
+  gap: 12px;
+}
+.prev legend { font-weight: 600; padding: 0 6px; }
+.prev .muted { grid-column: 1 / -1; margin: 0; }   /* explanation spans both columns */
+.prev label {
+  font-size: .85rem;
+  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+
+/* 
+   9. MESSAGES
+    */
+
+/* Validation errors (not colour only: icon + heading text as well) */
+.errors {
+  margin-top: 14px;
+  background: var(--red-bg);
+  border: 1px solid #fda29b;
+  color: var(--red);
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+.errors::before {
+  content: "⚠ Fix these first:";
+  display: block;
+  font-weight: 700;
+}
+.errors ul { margin: 4px 0 0; padding-left: 20px; }
+
+/* Warning shown when inputs changed after the last calculation */
+.stale {
+  background: #fff7e6;
+  border: 1px solid #fcd34d;
+  color: #7a4e00;
+  border-radius: 10px;
+  padding: 8px 12px;
+  margin: 0 0 12px;
+  font-weight: 600;
+}
+
+
+/* 
+   10. RESULTS
+    */
+
+/* Green-tinted results section under the calculator */
+.results {
+  scroll-margin-bottom: 96px;         /* keeps it above the mobile bottom bar */
+  scroll-margin-top: 70px;
+  background: var(--green-bg);
+  border: 1px solid #abefc6;
+  border-radius: var(--r);
+  padding: 18px;
+  margin-bottom: 18px;
+}
+
+/* Two summary cards: GPA and CGPA */
+.cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.card {
+  background: #fff;
+  border: 1px solid #bfd3f7;          /* subtle blue accent */
+  border-radius: var(--r);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+}
+.card span   { font-size: .85rem; color: var(--muted); }                       /* label */
+.card strong { font-size: 2.4rem; line-height: 1.2; color: var(--green); }     /* number */
+.card small  { color: var(--muted); }                                          /* note */
+
+.cheer { color: var(--green); font-weight: 600; margin: 6px 0 0; }   /* encouragement line */
+
+/* Large CGPA number on the Results page */
+.big-num { font-size: 3rem; font-weight: 700; margin: 0; color: var(--green); }
+
+/* Grade point guide table (denser rows) */
+.guide td,
+.guide th { padding: 6px 8px; }
+.guide td { border-bottom: 1px solid var(--border); }
+
+/* Results page tables */
+.plain th,
+.plain td { padding: 8px; }
+
+
+/* 
+   11. DIALOG (clear-all confirmation)
+    */
+dialog {
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 20px;
+  max-width: min(92vw, 400px);        /* never wider than the screen */
+  color: var(--text);
+}
+dialog::backdrop { background: rgba(15, 35, 80, .5); }   /* dimmed page behind */
+dialog .btns { justify-content: flex-end; }
+
+
+/* 
+   12. RESPONSIVE RULES
+   Written from wide to narrow. Rule order matters: later rules win.
+    */
+
+/* ---- Desktop only (701px and up): fixed column widths for the course table
+        so the "Course title" column gets the most room ---- */
+@media (min-width: 701px) {
+  .courses { table-layout: fixed; }
+  .courses th:nth-child(1) { width: 36px; }   /* # */
+  .courses th:nth-child(2) { width: 19%; }    /* Course code */
+  /* column 3 (Course title) takes the remaining space */
+  .courses th:nth-child(4) { width: 13%; }    /* Credit unit */
+  .courses th:nth-child(5) { width: 13%; }    /* Grade */
+  .courses th:nth-child(6) { width: 52px; }   /* Remove button */
+}
+
+/* ---- Tablet & phone (899px and below):
+        swap the sidebar for a top header + bottom navigation bar ---- */
+@media (max-width: 899px) {
+  .app { grid-template-columns: 1fr; }        /* single column */
+  .sidebar { display: none; }
+
+  /* Sticky mobile header */
+  .topbar {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    background: #fff;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 5;
+  }
+
+  main { padding: 16px 14px 90px; }           /* bottom space for the nav bar */
+  h1 { font-size: 1.45rem; }
+
+  .banner { padding: 18px; }
+  .banner-art { width: 64px; height: 64px; }  /* keep the illustration small */
+
+  /* Fixed bottom navigation bar: Home | Calculator | Results | About */
+  .bottom-nav {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--navy);
+    color: #fff;
+    z-index: 10;
+    padding-bottom: env(safe-area-inset-bottom);   /* iPhone home-indicator space */
+  }
+  .bottom-nav .nav-btn {
+    flex-direction: column;                   /* icon above label */
+    gap: 2px;
+    font-size: .78rem;
+    justify-content: center;
+    border-radius: 0;
+    text-align: center;
+  }
+  .bottom-nav .nav-btn.active { background: none; color: #7fb0ff; }
+}
+
+/* ---- Phone (700px and below):
+        the course table becomes one compact card per course ----
+   Cell order inside each card (td numbers are columns of the table):
+     row 1:  Course code (2)  | Credit unit (4)
+     row 2:  Course title (3), full width
+     row 3:  Grade (5)        | Remove button (6)                          */
+@media (max-width: 700px) {
+  .courses thead { display: none; }           /* labels come from data-label instead */
+
+  .courses tr {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .courses td { border: 0; padding: 0; }
+  .courses td.n { display: none; }            /* hide the row number */
+
+  .courses td:nth-child(2) { order: 1; }      /* code */
+  .courses td:nth-child(4) { order: 2; }      /* credit */
+  .courses td.title        { order: 3; grid-column: 1 / -1; }   /* title, full width */
+  .courses td:nth-child(5) { order: 4; }      /* grade */
+  .courses td.act          { order: 5; align-self: end; text-align: right; }  /* remove */
+
+  /* Small label above each field, taken from its data-label attribute */
+  .courses td::before {
+    content: attr(data-label);
+    display: block;
+    font-size: .75rem;
+    color: var(--muted);
+    margin-bottom: 2px;
+  }
+  .courses td.act::before { display: none; }  /* no label above the trash button */
+
+  .prev { grid-template-columns: 1fr; }       /* previous-semester fields stack */
+}
+
+/* ---- Very small phones (340px and below): stack the GPA/CGPA cards ---- */
+@media (max-width: 340px) {
+  .cards { grid-template-columns: 1fr; }
+}
